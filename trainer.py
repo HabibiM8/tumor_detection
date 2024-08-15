@@ -5,8 +5,9 @@ from main import debug
 
 
 class Trainer:
-    def __init__(self, model, dataset,  criterion = None, optimizer = None, n_epochs: int =10, lr=1e-3, train_percent = 0.7, batch_size: int = 4, debug: bool = False):
+    def __init__(self, model, dataset, device,   criterion = None, optimizer = None, n_epochs: int =10, lr=1e-3, train_percent = 0.7, batch_size: int = 4, debug: bool = False):
         self.model = model
+        self.device = device
         self.lr = lr
         self.n_epochs = n_epochs
         self.train_percent = train_percent
@@ -21,9 +22,9 @@ class Trainer:
 
    #TODO: could hardcode the atrributes into constructor, then use this method as a classmethod, to share attributes across instances
     def prepare_data(self):
-        train_set, test_set = random_split(self.dataset, [self.train_size, self.test_size])
-        trainLoader = DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=0)
-        testLoader = DataLoader(test_set, batch_size=self.batch_size, shuffle=False, num_workers=0)
+        self.train_set, self.test_set = random_split(self.dataset, [self.train_size, self.test_size])
+        self.trainLoader = DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=0)
+        self.testLoader = DataLoader(test_set, batch_size=self.batch_size, shuffle=False, num_workers=0)
 
         if self.debug:
 
@@ -49,5 +50,26 @@ class Trainer:
                     print(torch.unique(labels))  # Print values in the range [0, num_classes-1]
                     # Check only the first batch, continue not needed since it runs only 3 times
 
-        return trainLoader, testLoader
+        return self.trainLoader, self.testLoader
 
+
+    def loop_training(self):
+        for epoch in range(self.n_epochs):
+            self.model.train()  # Set model to training mode
+            running_loss = 0.0
+            for images, labels, _ in self.trainLoader:
+                images, labels = images.to(self.device), labels.to(self.device).long() - 1  # bc matlab counts from 1
+
+                self.optimizer.zero_grad()
+
+                outputs = self.model(images)
+                loss = self.criterion(outputs, labels.squeeze())
+                loss.backward()
+                self.optimizer.step()
+
+                running_loss += loss.item()
+
+            print(f"Epoch [{epoch + 1}/{self.n_epochs}], Loss: {running_loss / len(self.trainLoader)}")
+
+        # Save the trained model
+        torch.save(self.model.state_dict(), 'resnet_finetuned.pth')

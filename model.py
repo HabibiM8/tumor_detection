@@ -10,9 +10,10 @@ import torch.nn as nn
 
 class ResNetModel():
 
-    def __init__(self, model_size: int  = 18, fine_tune_entire_network: bool = False):
+    def __init__(self, device, model_size: int  = 18, fine_tune_entire_network: bool = False):
 
         self.fine_tune_entire_network = fine_tune_entire_network
+        self.device = device
 
         if model_size == 18:
             self.resnet = models.resnet18(pretrained=True)
@@ -51,8 +52,7 @@ class ResNetModel():
             for param in self.resnet.fc.parameters(): #fully conected
                 param.requires_grad = True
 
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.resnet = self.resnet.to(device)
+        self.resnet = self.resnet.to(self.device)
 
 
     def get_model(self):

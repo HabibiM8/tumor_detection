@@ -19,9 +19,12 @@ from trainer import Trainer
 #print(image.shape, label, tumor_mask.shape)
 
 
+#TODO: tensorboard, argparser and config
+
 """please view https://www.kaggle.com/datasets/ashkhagan/figshare-brain-tumor-dataset/data"""
 
 debug = False
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 mat_dir = '~/Uni/SS24/DLAM_Data/Data/data'
 #MatDataset.display_image_from_mat(path)
@@ -49,33 +52,13 @@ trainLoader, testLoader = trainer.prepare_data()
 
 
 
-num_epochs = 10  # Number of epochs to train
 
-resnet = resnet.to(device)  # Move model to GPU if available
 
 
 
 
 #training loop
-for epoch in range(num_epochs):
-    resnet.train()  # Set model to training mode
-    running_loss = 0.0
-    for images, labels, _ in trainLoader:
-        images, labels = images.to(device), labels.to(device).long() - 1 #bc matlab counts from 1
 
-        optimizer.zero_grad()
-
-        outputs = resnet(images)
-        loss = criterion(outputs, labels.squeeze())
-        loss.backward()
-        optimizer.step()
-
-        running_loss += loss.item()
-
-    print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(trainLoader)}")
-
-# Save the trained model
-torch.save(resnet.state_dict(), 'resnet_finetuned.pth')
 
 
 
