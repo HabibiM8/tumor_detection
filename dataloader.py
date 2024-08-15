@@ -11,23 +11,30 @@ import matplotlib.pyplot as plt
 from torchvision.transforms import ToTensor
 
 class MatDataset(Dataset):
-    def __init__(self, mat_file, transform = None):
-        self.mat_file = os.path.expanduser(mat_file) + '.mat'
-        self.transform = transform if transform is not None else ToTensor()  #self.mat_files = [f for f in os.listdir(self.mat_file) if f.endswith('.mat')]
-
+    def __init__(self, mat_dir, transform = None):
+        self.mat_dir = os.path.expanduser(mat_dir)
+        self.mat_files = [f for f in os.listdir(self.mat_dir) if f.endswith('.mat')]
+        self.transform = transform if transform is not None else transforms.ToTensor()
 
     def __len__(self):
-        with h5py.File(self.mat_file, 'r') as mat_file:
-            return len(mat_file['cjdata/image'])
+        #with h5py.File(self.mat_file, 'r') as mat_file:
+        return len(self.mat_files)
 
     def __getitem__(self, index):
-        with h5py.File(self.mat_file, 'r') as mat_file:
-            image = mat_file['cjdata/image'][index]
-            label = mat_file['cjdata/label'][index]
-            tumor_mask = mat_file['cjdata/tumorMask'][index]
+        mat_file_path = os.path.join(self.mat_dir, self.mat_files[index])
+        with h5py.File(mat_file_path, 'r') as mat_file:
+            image = mat_file['cjdata/image'][()]
+            label = mat_file['cjdata/label'][()] #.astype(int)
+            tumor_mask = mat_file['cjdata/tumorMask'][()]
 
             image = Image.fromarray(image)
             tumor_mask = Image.fromarray(tumor_mask)
+
+            if image.size != (512,512):
+                resize_transform = transforms.Resize((512,512))
+                image = resize_transform(image)
+                tumor_mask = resize_transform(tumor_mask)
+
 
             if self.transform:
                 image = self.transform(image)
