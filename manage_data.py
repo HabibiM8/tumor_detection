@@ -1,6 +1,9 @@
 import os
 import shutil
 
+"""this is just for local data management on my machine, just ignore"""
+
+
 # Define the source and destination directories
 source_dir = "/home/habibi/Uni/SS24/DLAM"
 destination_dir = os.path.join(source_dir, "dataa")
