@@ -14,6 +14,9 @@ import torch.nn as nn
 
 #print(image.shape, label, tumor_mask.shape)
 
+
+"""please view https://www.kaggle.com/datasets/ashkhagan/figshare-brain-tumor-dataset/data"""
+
 mat_dir = '~/Uni/SS24/DLAM_Data/Data/data'
 #MatDataset.display_image_from_mat(path)
 
@@ -76,7 +79,6 @@ if a == 2:
 
 
 ##model
-#TODO: pack everything into a nice happy class
 
 resnet = models.resnet18(pretrained=True)  #TODO use ResNet 50 later
 
@@ -84,9 +86,8 @@ num_classes = 3 #with or without tumor
 
 
 #change final fully conected layer for num of classes
-resnet.fc = nn.Linear(resnet.fc.in_features, num_classes)  #You can choose to fine-tune the entire network or just train the final layer. Fine-tuning means updating the weights of all the layers, while transfer learning typically means freezing the early layers and only training the final layer:
-
-"""# Fine-tune all layers
+resnet.fc = nn.Linear(resnet.fc.in_features, num_classes)
+"""
 for param in resnet.parameters():
     param.requires_grad = True"""
 
