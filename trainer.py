@@ -19,7 +19,6 @@ class Trainer:
         self.train_size = int(self.train_percent * len(dataset))
         self.test_size = len(dataset) - self.train_size
 
-   #TODO: could hardcode the atrributes into constructor, then use this method as a classmethod, to share attributes across instances
     def prepare_data(self):
         self.train_set, self.test_set = random_split(self.dataset, [self.train_size, self.test_size])
         self.trainLoader = DataLoader(self.train_set, batch_size=self.batch_size, shuffle=True, num_workers=0)
