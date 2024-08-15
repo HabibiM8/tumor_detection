@@ -27,7 +27,7 @@ debug = False
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 mat_dir = '~/Uni/SS24/DLAM_Data/Data/data'
-#MatDataset.display_image_from_mat(path)
+MatDataset.display_image_from_mat(mat_dir)
 
 
 
