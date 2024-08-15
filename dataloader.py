@@ -47,7 +47,7 @@ class MatDataset(Dataset):
     def get_mat_key(self,path): # = os.getcwd()):
         expanded_path = os.path.expanduser(path) + '.mat'
         with h5py.File(expanded_path, 'r') as mat_file:
-            data = mat_file['1'][()]  # Replace 'your_dataset_name' with the actual dataset name in the .mat file
+            data = mat_file['1'][()]
 
 
     @classmethod
@@ -73,9 +73,9 @@ class MatDataset(Dataset):
 
             image = Image.fromarray(image_data)
 
-            plt.imshow(image, cmap='gray')  # Assuming the image is grayscale, adjust cmap if needed
+            plt.imshow(image, cmap='gray')
             plt.title("Image from .mat file")
-            plt.axis('off')  # Hide axes
+            plt.axis('off')
             plt.show()
 
 class Transform:
@@ -85,7 +85,7 @@ class Transform:
     @staticmethod
     def get_transform():
         return transforms.Compose([
-    transforms.Grayscale(num_output_channels=3),  # If the image is grayscale, convert to 3 channels
+    transforms.Grayscale(num_output_channels=3),  # If grayscale, convert to 3 channels
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
 ])

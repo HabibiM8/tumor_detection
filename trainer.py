@@ -28,25 +28,21 @@ class Trainer:
         if self.debug:
 
             try:
-                # Example to iterate over the training data (3 times only)
                 for i, (images, labels, tumor_masks) in zip(range(3), self.trainLoader):
                     print(f"Iteration {i + 1}:")
-                    print("Batch of images shape:", images.shape)  # Shape will be (batch_size, num_channels, height, width)
-                    print("Batch of labels:", labels)  # Labels for the batch
-                    print("Batch of tumor masks shape:", tumor_masks.shape)  # Shape will be similar to images
-                    # You can add your training code here
+                    print("Batch of images shape:", images.shape)  # Shape (batch_size, num_channels, height, width)
+                    print("Batch of labels:", labels)
+                    print("Batch of tumor masks shape:", tumor_masks.shape)
 
-                # Iterate through test data (3 times only)
                 for i, (images, labels, tumor_masks) in zip(range(3), self.testLoader):
                     print(f"Iteration {i + 1}:")
                     print("Image batch shape:", images.shape)
                     print("Labels batch:", labels)
                     print("Tumor mask batch shape:", tumor_masks.shape)
 
-                # Iterate through train data to print unique labels (3 times only)
                 for i, (_, labels, _) in zip(range(3), self.trainLoader):
                     print(f"Iteration {i + 1}:")
-                    print(torch.unique(labels))  # Print values in the range [0, num_classes-1]
+                    print(torch.unique(labels))
 
             except Exception as e:
                 print(f"Error in data Preperation, check shapes and sizes!: {e}")
@@ -59,7 +55,7 @@ class Trainer:
 
     def loop_training(self):
         for epoch in range(self.n_epochs):
-            self.model.train()  # Set model to training mode
+            self.model.train()
             running_loss = 0.0
             for images, labels, _ in self.trainLoader:
                 images, labels = images.to(self.device), labels.to(self.device).long() - 1  # bc matlab counts from 1
