@@ -1,54 +1,70 @@
-import scipy.io
-import pandas as pd
 import os
+
 import torch
+from tensorboard.data.server_ingester import DataServerStartupError
+from torch.utils.data import Dataset
+from scipy.io import loadmat
+from torchvision import transforms
+from PIL import Image
+import h5py
+import matplotlib.pyplot as plt
+from torchvision.transforms import ToTensor
 
-from torchvision import datasets, transforms
-"""I recycled a previously implemented DataLoader, so there is still a test data set passed as an agument, but it shall not be used further..."""
-
-
-class CustomDataloader:
-    def __init__(self, train_batch_size, test_batch_size):
-
-        self.train_batch_size = train_batch_size
-        self.test_batch_size = test_batch_size
-        self.transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
-        ])
-
-
-        self.train_dataset = datasets.MNIST(root='./data', train=True, transform=self.transform, download=True)
-        self.test_dataset = datasets.MNIST(root='./data', train=False, transform= self.transform)
+class MatDataset(Dataset):
+    def __init__(self, mat_file, transform = None):
+        self.mat_file = os.path.expanduser(mat_file) + '.mat'
+        self.transform = transform if transform is not None else ToTensor()  #self.mat_files = [f for f in os.listdir(self.mat_file) if f.endswith('.mat')]
 
 
-        self.train_loader = torch.utils.data.DataLoader(self.train_dataset, batch_size= self.train_batch_size, shuffle= True)
-        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size= self.test_batch_size, shuffle=False)
+    def __len__(self):
+        with h5py.File(self.mat_file, 'r') as mat_file:
+            return len(mat_file['cjdata/image'])
 
+    def __getitem__(self, index):
+        with h5py.File(self.mat_file, 'r') as mat_file:
+            image = mat_file['cjdata/image'][index]
+            label = mat_file['cjdata/label'][index]
+            tumor_mask = mat_file['cjdata/tumorMask'][index]
+
+            image = Image.fromarray(image)
+            tumor_mask = Image.fromarray(tumor_mask)
+
+            if self.transform:
+                image = self.transform(image)
+                tumor_mask = self.transform(tumor_mask)
+            return image, label, tumor_mask
+
+    @classmethod
+    def get_mat_key(self,path): # = os.getcwd()):
+        expanded_path = os.path.expanduser(path) + '.mat'
+        with h5py.File(expanded_path, 'r') as mat_file:
+            data = mat_file['1'][()]  # Replace 'your_dataset_name' with the actual dataset name in the .mat file
 
 
     @classmethod
-    def getData(cls,train_batch_size, test_batch_size):
-        instance = cls(train_batch_size, test_batch_size)
-        return instance.train_loader, instance.test_loader
+    def explore_mat_file(cls, path):
+        expanded_path = os.path.expanduser(path) + '.mat'
+        with h5py.File(expanded_path, 'r') as mat_file:
+            def print_structure(name, obj):
+                if isinstance(obj, h5py.Dataset):
+                    print(f"Dataset: {name}, Shape: {obj.shape}, Type: {obj.dtype}")
+                elif isinstance(obj, h5py.Group):
+                    print(f"Group: {name}")
+
+            mat_file.visititems(print_structure)
 
 
+    @classmethod
+    def display_image_from_mat(cls, mat_file_path):
 
-    def mat_to_parquet(mat_file_path, parquet_file_path):
-        """load .mat and save to parquet file"""
-        for file_name in os.listdir(mat_file_path):
-            if file_name.endswith(".mat"):
-                mat_file_path = os.path.join(mat_file_path, file_name)
+        mat_file_path = os.path.expanduser(mat_file_path)
+        mat_file_path = os.path.join(mat_file_path, '1.mat')
+        with h5py.File(mat_file_path, 'r') as mat_file:
+            image_data = mat_file['cjdata/image'][()]
 
-                mat_data = scipy.io.loadmat(mat_file_path)
+            image = Image.fromarray(image_data)
 
-                for key in mat_data:
-                    if isinstance(mat_data[key], (list, dict, pd.DataFrame)):
-                        df = pd.DataFrame(mat_data[key])
-                        break
-                parquet_file_path = os.path.join(parquet_file_path, file_name.replace('.mat', '.parquet'))
-                df.to_parquet(parquet_file_path)
-
-
-
-
+            plt.imshow(image, cmap='gray')  # Assuming the image is grayscale, adjust cmap if needed
+            plt.title("Image from .mat file")
+            plt.axis('off')  # Hide axes
+            plt.show()
