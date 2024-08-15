@@ -38,9 +38,10 @@ transform = Transform.get_transform()
 dataset = MatDataset(mat_dir, transform=transform)
 
 
-model = ResNetModel(model_size=18, fine_tune_entire_network=False).get_model()
+model = ResNetModel(device= device, model_size=18, fine_tune_entire_network=False).get_model()
 trainer = Trainer(model = model,
                   dataset= dataset,
+                  device= device,
                   criterion = torch.nn.CrossEntropyLoss,
                   n_epochs = 10,
                   lr = 1e-3,
@@ -50,31 +51,8 @@ trainer = Trainer(model = model,
                   )
 trainLoader, testLoader = trainer.prepare_data()
 
+trainer.loop_training()
+trainer.loop_testing()
 
 
 
-
-
-
-
-#training loop
-
-
-
-
-
-#eval loop
-
-resnet.eval()  # Set model to evaluation mode
-correct = 0
-total = 0
-
-with torch.no_grad():  # Disable gradient calculation for faster computation
-    for images, labels, _ in testLoader:
-        images, labels = images.to(device), labels.to(device).long() - 1 #bc matlab counts from 1
-        outputs = resnet(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels.squeeze()).sum().item()
-
-print(f'Accuracy of the model on the test set: {100 * correct / total:.2f}%')
