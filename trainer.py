@@ -1,51 +1,53 @@
-
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torchvision import datasets, transforms
+from torch.utils.data import random_split, DataLoader
 
-from DataLoader import CustomDataloader
-from model import FullyConnected_AE
-from tqdm import tqdm
-import sys
+from main import debug
+
+
 class Trainer:
-    def __init__(self, model, train_data, test_data):
+    def __init__(self, model, dataset,  criterion = None, optimizer = None, n_epochs: int =10, lr=1e-3, train_percent = 0.7, batch_size: int = 4, debug: bool = False):
         self.model = model
-        self.train_data = train_data
-        self.test_data = test_data
-        self.criterion = nn.MSELoss()
-        self.optimizer = optim.Adam(model.parameters(), lr =0.001)
+        self.lr = lr
+        self.n_epochs = n_epochs
+        self.train_percent = train_percent
+        self.batch_size = batch_size
+        self.debug = debug
+        self.criterion = criterion if criterion is not None else torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.CrossEntropyLoss()
+        self.optimizer = optimizer if optimizer is not None else torch.optim.Adam(self.model.parameters(), self.lr)
+        self.dataset = dataset
+        self.train_size = int(self.train_percent * len(dataset))
+        self.test_size = len(dataset) - self.train_size
 
-    def train(self, epoch):
-        self.model.train()
-        for batch_idx, (data,target) in tqdm(enumerate(self.train_data)):
-            self.optimizer.zero_grad()
-            if data.shape[0] < 64:  #batch_size == 64 hardcoded, skip last batch if smaller
-                continue
-            self.output = self.model(data)
-            loss = self.criterion(self.output, data.view(data.size(0),-1)) #compare output with original input into the AE
-            loss.backward()
-            self.optimizer.step()
-            if batch_idx % 100 == 0:
-                print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(self.train_data.dataset)} ({100. * batch_idx / len(self.train_data):.0f}%)]\tLoss: {loss.item():.6f}')
+   #TODO: could hardcode the atrributes into constructor, then use this method as a classmethod, to share attributes across instances
+    def prepare_data(self):
+        train_set, test_set = random_split(self.dataset, [self.train_size, self.test_size])
+        trainLoader = DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=0)
+        testLoader = DataLoader(test_set, batch_size=self.batch_size, shuffle=False, num_workers=0)
 
-    def test(self):
-        self.model.eval()
-        test_loss = 0
-        correct = 0
+        if self.debug:
 
-        with torch.no_grad():
-            for data, target in self.test_data:
-                if data.shape[0] < 64:  # batch_size == 64 hardcoded, neglect the last batch if it is smaller than the other batches
-                    continue
-                output = self.model(data)
-                test_loss += self.criterion(output, data.view(data.size(0),-1)).item()
-                pred = output.argmax(dim=1, keepdim = True)
-                correct += pred.argmax().sum().item()
-        test_loss /= len(self.test_data.dataset)
-        print(f'\nTest set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(self.test_data.dataset)} ({100. * correct / len(self.test_data.dataset):.0f}%)\n')
+            try:
+                # Example to iterate over the training data (3 times only)
+                for i, (images, labels, tumor_masks) in zip(range(3), trainLoader):
+                    print(f"Iteration {i + 1}:")
+                    print("Batch of images shape:", images.shape)  # Shape will be (batch_size, num_channels, height, width)
+                    print("Batch of labels:", labels)  # Labels for the batch
+                    print("Batch of tumor masks shape:", tumor_masks.shape)  # Shape will be similar to images
+                    # You can add your training code here
 
-    def loop(self):
-        for epoch in range(1,5):
-            self.train(epoch)
-            #self.test()
+                # Iterate through test data (3 times only)
+                for i, (images, labels, tumor_masks) in zip(range(3), testLoader):
+                    print(f"Iteration {i + 1}:")
+                    print("Image batch shape:", images.shape)
+                    print("Labels batch:", labels)
+                    print("Tumor mask batch shape:", tumor_masks.shape)
+
+                # Iterate through train data to print unique labels (3 times only)
+                for i, (_, labels, _) in zip(range(3), trainLoader):
+                    print(f"Iteration {i + 1}:")
+                    print(torch.unique(labels))  # Print values in the range [0, num_classes-1]
+                    # Check only the first batch, continue not needed since it runs only 3 times
+
+        return trainLoader, testLoader
+

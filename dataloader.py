@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 
 import torch
 from tensorboard.data.server_ingester import DataServerStartupError
@@ -20,6 +21,7 @@ class MatDataset(Dataset):
         #with h5py.File(self.mat_file, 'r') as mat_file:
         return len(self.mat_files)
 
+    @lru_cache(maxsize=300)
     def __getitem__(self, index):
         mat_file_path = os.path.join(self.mat_dir, self.mat_files[index])
         with h5py.File(mat_file_path, 'r') as mat_file:
@@ -75,3 +77,15 @@ class MatDataset(Dataset):
             plt.title("Image from .mat file")
             plt.axis('off')  # Hide axes
             plt.show()
+
+class Transform:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def get_transform():
+        return transforms.Compose([
+    transforms.Grayscale(num_output_channels=3),  # If the image is grayscale, convert to 3 channels
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
